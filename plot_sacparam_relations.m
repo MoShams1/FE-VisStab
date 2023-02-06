@@ -193,7 +193,7 @@ D = (slope * A + intercept) / 1000;  % in sec
 S = a * D + b;
 gamma = 4 / (S .^ 2);
 
-t = 0:.1:20;
+t = 0:.1:40;
 alpha = 1;
 beta = 1;
 Vt = alpha * ((t/beta) .^ (gamma - 1)) .* exp(-t/beta);

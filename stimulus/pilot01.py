@@ -10,7 +10,6 @@ velocity profile of a saccade.
 
 """
 
-import os
 import random
 import numpy as np
 from lib import config_visual as cvis, genpath, keymouse, timestamp
@@ -79,7 +78,7 @@ for itrial in range(NTRIALS):
     lastgap_dur = np.random.choice(gap_dur_arr)
 
     # decide on the motion direction and adjust motion path and flash position
-    movobj_dir = random.choice([-1, 1])
+    movobj_dir = random.choice([1, 1])
     if movobj_dir == -1:
         movobj_pathx_tr = -movobj_pathx
     else:
