@@ -159,6 +159,7 @@ subplot(1,2,1)
 hold on
 h1 = plot(A, Vm_Opstal, 'o', 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'none');
 h2 = plot(A, Vm_Collewijn, 'o', 'MarkerFaceColor', color(2,:), 'MarkerEdgeColor', 'none');
+title('Saccade Main Sequence')
 xlabel("Saccade Amplitude (dva)")
 ylabel("Saccade Peak Velocity (dva/s)")
 legend([h1, h2], {'van Opstal & van Gisbergen 1987', 'Collewijn et al. 1988'},...
@@ -186,7 +187,7 @@ b = 0.77;
 c = 1.64;
 V0 = 450;
 A0 = 7.9;
-A = 10;
+A = 6;
 
 D = (slope * A + intercept) / 1000;  % in sec
 S = a * D + b;
@@ -206,6 +207,7 @@ subplot(1,2,2)
 hold on
 plot(t, gain_Opstal * Vt, 'o', 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'none');
 plot(t, gain_Collewijn * Vt, 'o', 'MarkerFaceColor', color(2,:), 'MarkerEdgeColor', 'none');
+title('Saccade Velocity Profile')
 xlabel("Time (ms)")
 ylabel("Saccade Peak Velocity (dva/s)")
 
