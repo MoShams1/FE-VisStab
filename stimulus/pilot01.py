@@ -12,33 +12,27 @@ velocity profile of a saccade.
 
 import random
 import numpy as np
-from lib import config_visual as cvis, genpath, keymouse, timestamp
+from lib import config_visual as cvis, genpath, gen_sacpath
 
 # ----------------------------------------------------------------------------
 
 # /// GENERAL SETTINGS ///
 
 subID = 'test'
-NTRIALS = 1
+NTRIALS = 5
 screen_num = 0  # 0: primary    1: secondary
-frame_rate = 120
+frame_rate = 1200
 full_screen = False
 # ----------------------------------------------------------------------------
 
 # /// CONFIGURE VISUAL OBJECTS ///
-
-# /// frame rate downsampling
-# division by 60 to obtain 60 Hz (16.67 ms per frame) regardless of actual
-# frame rate
-frame_rate_rep = int(frame_rate / 60)
-practical_fr = int(frame_rate / frame_rate_rep)
 
 # /// background
 bg_color = 'black'
 
 # /// temporal gap
 # sec x Hz = frames
-gap_dur_arr = np.round(np.arange(1, 1.5, .1) * practical_fr)
+gap_dur_arr = np.round(np.arange(1, 1.5, .1) * frame_rate)
 gap_dur_arr = gap_dur_arr.astype(int)
 
 # /// fixation dot
@@ -49,12 +43,21 @@ fixdot_color = 'white'
 # /// moving object
 movobj_size = 5
 movobj_color = 'white'
-movobj_firstpos = (-5, 5)
-movobj_lastpos = (5, 5)  # two potential last positions
-movobj_dur = int(.5 * practical_fr)  # sec x Hz = frames
+movobj_lw = .1
+
+# object's path
+amp = 2
+movobj_firstpos = (-amp/2, 5)
+movobj_lastpos = (amp/2, 5)  # two potential last positions
+vmax = gen_sacpath.mainsequence(amp=amp)
+dur = amp / vmax  # in sec
+movobj_dur = int(round(dur * frame_rate))  # sec x Hz = frames
 movobj_pathx, movobj_pathy = genpath.linear(pos1=movobj_firstpos,
                                             pos2=movobj_lastpos,
                                             dur=movobj_dur)
+print(f"amp: {amp}")
+print(f"vmax: {vmax}")
+print(f"nframes: {movobj_dur}")
 # ----------------------------------------------------------------------------
 
 # /// CONFIGURE MONITOR ///
@@ -89,24 +92,53 @@ for itrial in range(NTRIALS):
     # /// run task
 
     # gap period
-    for frame in range(firstgap_dur):
+    # for frame in range(firstgap_dur):
+    #     win.flip()
+
+    # motion period (1st leg)
+    for iframe in range(movobj_dur):
+        cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
+                       color=fixdot_color)
+        cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
+                       fillcolor=bg_color,
+                       pos=(movobj_pathx_tr[iframe],
+                            movobj_pathy_tr[iframe]),
+                       line_width=movobj_lw)
+        iframe_last = iframe
+        win.flip()
+    for i in range(20):
+        cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
+                       color=fixdot_color)
+        cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
+                       fillcolor=bg_color,
+                       pos=(movobj_pathx_tr[iframe_last],
+                            movobj_pathy_tr[iframe_last]),
+                       line_width=movobj_lw)
         win.flip()
 
-    # motion period
+    # motion period (2nd leg)
     for iframe in range(movobj_dur):
-        for ifrrep in range(frame_rate_rep):
-            cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
-                           color=fixdot_color)
-            cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
-                           fillcolor=bg_color,
-                           pos=(movobj_pathx_tr[iframe],
-                                movobj_pathy_tr[iframe]),
-                           line_width=.1)
-            win.flip()
+        cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
+                       color=fixdot_color)
+        cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
+                       fillcolor=bg_color,
+                       pos=(-movobj_pathx_tr[iframe],
+                            movobj_pathy_tr[iframe]),
+                       line_width=movobj_lw)
+        iframe_last = iframe
+        win.flip()
+    for i in range(20):
+        cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
+                       color=fixdot_color)
+        cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
+                       fillcolor=bg_color,
+                       pos=(-movobj_pathx_tr[iframe_last],
+                            movobj_pathy_tr[iframe_last]),
+                       line_width=movobj_lw)
 
     # gap period
-    for frame in range(lastgap_dur):
-        win.flip()
+    # for frame in range(lastgap_dur):
+    #     win.flip()
     # -------------------------------
 
 win.close()
