@@ -200,3 +200,8 @@ def run_pause_screen(win, current_block, cmd, nblocks, cnd=None,
     elif cmd['response_key'] in pressed_key:
         pass
 
+
+def gen_grating(win, sf=1, phase=0, size=(10, 10)):
+    stim = visual.GratingStim(win, units='deg', size=size, sf=sf, phase=phase,
+                              contrast=1)
+    stim.draw()

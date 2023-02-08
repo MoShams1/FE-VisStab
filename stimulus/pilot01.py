@@ -96,7 +96,7 @@ for itrial in range(NTRIALS):
     #     win.flip()
 
     # motion period (1st leg)
-    for iframe in range(movobj_dur):
+    for iframe in range(0, movobj_dur-1):
         cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
                        color=fixdot_color)
         cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
@@ -104,20 +104,10 @@ for itrial in range(NTRIALS):
                        pos=(movobj_pathx_tr[iframe],
                             movobj_pathy_tr[iframe]),
                        line_width=movobj_lw)
-        iframe_last = iframe
-        win.flip()
-    for i in range(20):
-        cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
-                       color=fixdot_color)
-        cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
-                       fillcolor=bg_color,
-                       pos=(movobj_pathx_tr[iframe_last],
-                            movobj_pathy_tr[iframe_last]),
-                       line_width=movobj_lw)
         win.flip()
 
     # motion period (2nd leg)
-    for iframe in range(movobj_dur):
+    for iframe in range(1, movobj_dur):
         cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
                        color=fixdot_color)
         cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
@@ -125,16 +115,7 @@ for itrial in range(NTRIALS):
                        pos=(-movobj_pathx_tr[iframe],
                             movobj_pathy_tr[iframe]),
                        line_width=movobj_lw)
-        iframe_last = iframe
         win.flip()
-    for i in range(20):
-        cvis.addfixdot(win=win, size=fixdot_size, pos=fixdot_pos,
-                       color=fixdot_color)
-        cvis.addsquare(win=win, width=movobj_size, color=movobj_color,
-                       fillcolor=bg_color,
-                       pos=(-movobj_pathx_tr[iframe_last],
-                            movobj_pathy_tr[iframe_last]),
-                       line_width=movobj_lw)
 
     # gap period
     # for frame in range(lastgap_dur):
