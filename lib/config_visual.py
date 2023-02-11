@@ -22,7 +22,7 @@ def configmon_dell():
 
 def configwin(mon, fullscr, screen, color):
     if fullscr:
-        win = visual.Window(monitor=mon, screen=screen, units='deg',
+        win = visual.Window(monitor=mon, screen=screen, units='pix',
                             pos=[0, 0], fullscr=fullscr, color=color)
     else:
         win = visual.Window(monitor=mon, units='deg',
@@ -45,6 +45,7 @@ def test_framerate(win, nominal_fr):
 def addfixdot(win, size=1, pos=(0, 0), color='black'):
     fixdot = visual.TextStim(win=win, text='+', height=size, pos=pos,
                              color=color)
+    reformatForQUAD4x(stimulus, win, quadrants[i])
     fixdot.draw()
 
 
@@ -205,3 +206,32 @@ def gen_grating(win, sf=1, phase=0, size=(10, 10)):
     stim = visual.GratingStim(win, units='deg', size=size, sf=sf, phase=phase,
                               contrast=1)
     stim.draw()
+
+
+def reformatForQUAD4x(imageStim, win, quadrant):
+    """
+    Rescales the imagestim to 960 x 540, adds position offset based on quadrant arg
+    """
+    if not (win.size[0] == 1920) or not (win.size[1] == 1080):
+        print('Warning! Window is not 1920 x 1080, window size must be 1920 x 1080 for sequencer to work correctly.')
+        return
+
+    # Rescale to half size to account for resolution drop
+    for i in range(0, len(imageStim.size)):
+        imageStim.size[i] = imageStim.size[i] / 2
+
+    # Position offsets
+    x = win.size[0] / 4
+    y = win.size[1] / 4
+    offsets = [[-x, y],
+               [x, y],
+               [-x, -y],
+               [x, -y]]
+
+    # apply position offsets
+    newPos = [0, 0]
+    newPos[0] = imageStim.pos[0] + offsets[quadrant - 1][0]
+    newPos[1] = imageStim.pos[1] + offsets[quadrant - 1][1]
+    imageStim.setPos(newPos)
+
+    return imageStim

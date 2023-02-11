@@ -95,11 +95,11 @@ maskTexture = 'Mask_img.png'
 
 # Mask characteristics
 framerate = 480
-duration = 3  # seconds
+duration = 1  # seconds
 t = np.tile(np.linspace(0, 1, (framerate)), duration)
 
 f = 8  # frames/cycle, for a 60 Hz oscillating mask
-a = 0.5
+a = 1
 maskOpacity = (a * np.sin(2 * np.pi * f * t) + 0.5)
 
 # We'll also make a repeating list of quadrant assignments to kee everything ordered
