@@ -5,6 +5,7 @@
 To test a blink of a probe at 0.5 Hz via PROPixx working at 480 Hz
 
 """
+import numpy as np
 from pypixxlib import _libdpx as dp
 from psychopy import visual, monitors
 
@@ -43,8 +44,8 @@ def reformatForQUAD4x(imageStim, window, quadrant):
 
 # /// GENERAL SETTINGS ///
 
-NTRIALS = 1
-refresh_rate = 480
+NTRIALS = 10
+refresh_rate = 360
 full_screen = True
 
 # ----------------------------------------------------------------------------
@@ -52,7 +53,7 @@ full_screen = True
 dp.DPxOpen()
 isReady = dp.DPxIsReady()
 if isReady:
-    dp.DPxSetPPxDlpSeqPgrm('RGB Quad 480Hz')
+    dp.DPxSetPPxDlpSeqPgrm('GREY Quad 1440Hz')
     dp.DPxWriteRegCache()
 else:
     print('Warning! DPx call failed, check connection to hardware')
@@ -66,14 +67,23 @@ monitor.setSizePix([1920, 1080])
 if full_screen:
     win = visual.Window(monitor=monitor, screen=0, units='pix',
                         pos=[0, 0], fullscr=full_screen, color='black',
-                        size=(1920, 1080))
+                        size=(1920, 1080), blendMode='add')
 else:
     win = visual.Window(monitor=monitor, units='deg',
                         size=[800, 800], pos=[0, 0],
-                        color='black')
+                        color='black', blendMode='add')
 
 actual_fr = win.getActualFrameRate(nIdentical=10, nMaxFrames=100,
                                    nWarmUpFrames=10, threshold=1)
+# ----------------------------------------------------------------------------
+
+# /// CONFIGURE CONDITIONS ///
+
+colors = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+col_quads = np.tile([0, 1, 2, 3], 3)
+col_colors = np.repeat([0, 1, 2], 4)
+cnd_mat = np.vstack((col_quads, col_colors)).transpose()
+nseqs = 12
 # ----------------------------------------------------------------------------
 
 # /// START TRIAL ///
@@ -82,24 +92,32 @@ for itrial in range(NTRIALS):
 
     # -------------------------------
     for frame in range(refresh_rate):
-        iquad = (frame + 1) % 4
-        if iquad == 0:
-            iquad = 4
-        stim = visual.Rect(win=win, size=50, fillColor='white', pos=(0, 0))
-        stim = reformatForQUAD4x(stim, win, iquad)
-        stim.draw()
-        if iquad == 4:
-            win.flip()
 
-    # for frame in range(refresh_rate):
-    #     iquad = (frame + 1) % 4
-    #     if iquad == 0:
-    #         iquad = 4
-    #     stim = visual.Rect(win=win, size=50, fillColor='black', pos=(0, 0))
-    #     stim = reformatForQUAD4x(stim, win, iquad)
-    #     stim.draw()
-    #     if iquad == 4:
-    #         win.flip()
+        iseq = (frame + 1) % nseqs
+        if iseq == 0:
+            iseq = nseqs
+
+        stim = visual.Rect(win=win, size=50,
+                           fillColor=colors[cnd_mat[iseq - 1, 1]], pos=(0, 0))
+        stim = reformatForQUAD4x(stim, win, cnd_mat[iseq - 1, 0])
+        stim.draw()
+
+        if iseq == nseqs:
+            win.flip()
+    # -------------------------------
+    for frame in range(refresh_rate):
+
+        iseq = (frame + 1) % nseqs
+        if iseq == 0:
+            iseq = nseqs
+
+        stim = visual.Rect(win=win, size=50,
+                           fillColor=colors[cnd_mat[iseq - 1, 1]], pos=(0, 50))
+        stim = reformatForQUAD4x(stim, win, cnd_mat[iseq - 1, 0])
+        stim.draw()
+
+        if iseq == nseqs:
+            win.flip()
     # -------------------------------
 
 print(f"Measured Frame Rate: {actual_fr} Hz")
