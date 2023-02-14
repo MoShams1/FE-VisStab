@@ -1,5 +1,5 @@
 """
-        Mo Shams <MShamsCBR@gmail.com>
+        Mohammad Shams <MShamsCBR@gmail.com>
         Initiated on: Feb 11, 2023
 
 To test an blink an probe at 0.5 Hz via AOC monitor working at 120 Hz

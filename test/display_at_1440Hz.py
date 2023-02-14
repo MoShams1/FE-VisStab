@@ -1,5 +1,5 @@
 """
-        Mo Shams <MShamsCBR@gmail.com>
+        Mohammad Shams <MShamsCBR@gmail.com>
         Initiated on: Feb 11, 2023
 
 To test a blink of a probe at 0.5 Hz via PROPixx working at 480 Hz
