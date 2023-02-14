@@ -45,7 +45,7 @@ def reformatForQUAD4x(imageStim, window, quadrant):
 # /// GENERAL SETTINGS ///
 
 NTRIALS = 10
-refresh_rate = 360
+refresh_rate = 1440
 full_screen = True
 
 # ----------------------------------------------------------------------------
