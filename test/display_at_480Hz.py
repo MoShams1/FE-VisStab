@@ -91,15 +91,15 @@ for itrial in range(NTRIALS):
         if iquad == 4:
             win.flip()
 
-    # for frame in range(refresh_rate):
-    #     iquad = (frame + 1) % 4
-    #     if iquad == 0:
-    #         iquad = 4
-    #     stim = visual.Rect(win=win, size=50, fillColor='black', pos=(0, 0))
-    #     stim = reformatForQUAD4x(stim, win, iquad)
-    #     stim.draw()
-    #     if iquad == 4:
-    #         win.flip()
+    for frame in range(refresh_rate):
+        iquad = (frame + 1) % 4
+        if iquad == 0:
+            iquad = 4
+        stim = visual.Rect(win=win, size=50, fillColor='black', pos=(0, 0))
+        stim = reformatForQUAD4x(stim, win, iquad)
+        stim.draw()
+        if iquad == 4:
+            win.flip()
     # -------------------------------
 
 print(f"Measured Frame Rate: {actual_fr} Hz")
