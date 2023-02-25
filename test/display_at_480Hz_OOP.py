@@ -43,13 +43,13 @@ def reformatForQUAD4x(imageStim, window, quadrant):
 
 # /// GENERAL SETTINGS ///
 
-NTRIALS = 1
+NTRIALS = 3
 refresh_rate = 480
 full_screen = True
 
 # ----------------------------------------------------------------------------
 my_device = PROPixx()
-my_device.setDlpSequencerProgram('RGB Quad 480Hz')
+my_device.setDlpSequencerProgram('QUAD4X')
 my_device.updateRegisterCache()
 # ----------------------------------------------------------------------------
 

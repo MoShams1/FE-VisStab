@@ -1,4 +1,6 @@
-%% script to test whether the Propixx properly works at 1440 fps
+   
+
+% script to test whether the Propixx properly works at 1440 fps
 % by Richard Schweitzer, 11/2022
 
 clear all
@@ -9,7 +11,7 @@ close all
 %% Demo specifications
 use_1440fps = 1;                % use Propixx? set 0 zero to test in dummy mode
 desired_n_frames_per_polarity = 12; % how many frames per polarity?
-demo_duration = 10;          % for how long should the demo run? (in seconds)
+demo_duration = 1;          % for how long should the demo run? (in seconds)
 center_rect_width_pix = 200; % size of center rectangle for flicker (in pixels)
 center_rect_height_pix = 200;
 low_high_offset = 0.05;      % 0: maximum and minimum luminance, 0.5: no luminance change
