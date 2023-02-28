@@ -48,27 +48,21 @@ refresh_rate = 480
 full_screen = True
 
 # ----------------------------------------------------------------------------
-my_device = PROPixx()
-my_device.setDlpSequencerProgram('QUAD4X')
-my_device.updateRegisterCache()
-# ----------------------------------------------------------------------------
 
 # /// CONFIGURE MONITOR ///
 
 monitor = monitors.Monitor('prim_mon', width=60.45, distance=57)
 monitor.setSizePix([1920, 1080])
-
-if full_screen:
-    win = visual.Window(monitor=monitor, screen=0, units='pix',
-                        pos=[0, 0], fullscr=full_screen, color='black',
-                        size=(1920, 1080))
-else:
-    win = visual.Window(monitor=monitor, units='deg',
-                        size=[800, 800], pos=[0, 0],
-                        color='black')
-
+win = visual.Window(monitor=monitor, screen=0, units='pix',
+                    pos=[0, 0], color='black', size=[1920, 1080])
 actual_fr = win.getActualFrameRate(nIdentical=10, nMaxFrames=100,
                                    nWarmUpFrames=10, threshold=1)
+print(f"Window size: {win.size} pix")
+print(f"Measured Frame Rate: {actual_fr} Hz")
+# ----------------------------------------------------------------------------
+my_device = PROPixx()
+my_device.setDlpSequencerProgram('QUAD4X')
+my_device.updateRegisterCache()
 # ----------------------------------------------------------------------------
 
 # /// START TRIAL ///
@@ -97,7 +91,6 @@ for itrial in range(NTRIALS):
             win.flip()
     # -------------------------------
 
-print(f"Measured Frame Rate: {actual_fr} Hz")
 # dp.DPxSetPPxDlpSeqPgrm('RGB')
 # my_device.setDlpSequencerProgram(2)
 # my_device.writeRegisterCache()
