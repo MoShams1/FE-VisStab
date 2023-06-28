@@ -49,7 +49,7 @@ full_screen = True
 
 # ----------------------------------------------------------------------------
 my_device = PROPixx()
-my_device.setDlpSequencerProgram('RGB Quad 480Hz')
+my_device.setDlpSequencerProgram('QUAD4X')
 my_device.updateRegisterCache()
 # ----------------------------------------------------------------------------
 
@@ -98,8 +98,9 @@ for itrial in range(NTRIALS):
     # -------------------------------
 
 print(f"Measured Frame Rate: {actual_fr} Hz")
-# dp.DPxSetPPxDlpSeqPgrm('RGB')
-# my_device.setDlpSequencerProgram(2)
-# my_device.writeRegisterCache()
-my_device.close()
+
 win.close()
+
+my_device.setDlpSequencerProgram('QUAD4X')
+my_device.writeRegisterCache()
+my_device.close()
