@@ -6,7 +6,8 @@ close all
 
 % SESSIOINS'S META DATA
 subj = 'test';
-ntrials = 3   ;
+cnd = 1;
+ntrials = 3;
 full_screen = false ;
 
 timestamp = datetime('now');
@@ -44,7 +45,11 @@ ox = dim(3)/2;
 oy = dim(4)/2;
 
 % set grating parameters
-ncyc = 3;
+if cnd == 1
+    ncyc = 3;
+elseif cnd == 2
+    ncyc = 1.5;
+end
 gr_width_dva = 10;
 gr_height_dva = 10;
 gr_width = dva2pix(gr_width_dva);
@@ -69,11 +74,12 @@ probeRect_rep = ...
 
 % set motion parameters
 ref_rate = 30;
+phase_shift = 180;
 cyc_len_dva = gr_width_dva/ncyc;
 speed_dva_per_s = mainsequence(cyc_len_dva);
 % speed_cyc_per_s = speed_dva_per_s / cyc_len_dva;
 speed_cyc_per_s = 1;
-phase_vec_cyc = linspace(0, 360, ref_rate/speed_cyc_per_s);  % one cycle
+phase_vec_cyc = linspace(0, phase_shift, ref_rate/speed_cyc_per_s);  % one cycle
 phase_vec_cyc_rev = fliplr(phase_vec_cyc);
 phase_vec_leg1 = [repelem(phase_vec_cyc(1),probe_dur), phase_vec_cyc(2:end-1)];
 phase_vec_leg2 = [repelem(phase_vec_cyc_rev(1),probe_dur), phase_vec_cyc_rev(2:end-1)];
@@ -119,7 +125,7 @@ for itrial = 1:ntrials
             if iphase == 0
                 % flash red probe
                 Screen('FillOval', win, red, probeRect);
-            elseif iphase == 360
+            elseif iphase == phase_shift
                 % flash blue probe
                 Screen('FillOval', win, blue, probeRect);
             end
