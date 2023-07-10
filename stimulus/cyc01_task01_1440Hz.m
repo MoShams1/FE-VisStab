@@ -1,50 +1,51 @@
 clc
-clear
+clear all
 close all
 
-warning_state = warning('off', 'all');
+cnd = 1;
 
-% #######################################################################################
-
-% SESSIOINS'S META DATA
-subj = 'test';
-cnd = 2;
-ntrials = 3;
-full_screen = false ;
-
-timestamp = datetime('now');
-timestamp = datestr(timestamp, 'yyyymmdd_HHMMSS');
-save_file_name = ['task01_',timestamp,'_',subj,'.mat'];
-save_directory = fullfile('..','data','cyc01',save_file_name);
-
-% #######################################################################################
-
-% prioritize 'PsychBasic' over any other folder in the path list
-addpath(['/Users/mohammad/Library/Application Support/' ...
-    'MathWorks/MATLAB Add-Ons/Collections/Psychtoolbox-3/Psychtoolbox/PsychBasic'])
-
-% skip synchronization test for Mac
-Screen('Preference', 'SkipSyncTests', 1);
-
-PsychDefaultSetup(2);
-
-% Note: MacAir, instead of 1440 x 900 (default) res, PTB uses 1280 x 800
-
-% #######################################################################################
-
-% SET STIMULUS PARAMETERS
-
-% set window parameters
-screen_number = 0;
-bg_color = [1 1 1]*255 / 2;
-if full_screen
-    [win, dim] = Screen('OpenWindow', screen_number, bg_color);
-else
-    win_size = [0, 0, 900, 600];
-    [win, dim] = Screen('OpenWindow', screen_number, bg_color, win_size);
+%Check connection and open Datapixx if it's not open yet
+isConnected = Datapixx('isReady');
+if ~isConnected
+    Datapixx('Open');
 end
-ox = dim(3)/2;
-oy = dim(4)/2;
+
+%Open a display on the Propixx
+AssertOpenGL;
+KbName('UnifyKeyNames');
+screenID = 0;                                           %Change this value to change display
+[windowPtr,~] = Screen('OpenWindow', screenID, 0);
+
+%Enable 1440 Hz mode (12 frames/flip), with sync flipping
+% Datapixx('SetPropixxDlpSequenceProgram', 5);
+Datapixx('SetPropixxDlpSequenceProgram', 2);
+Datapixx('RegWrRd');
+
+PsychProPixx('SetupFastDisplayMode', windowPtr, 12, 0);
+stimulusBuffer = PsychProPixx('GetImageBuffer');
+
+%Set up some stimulus characteristics-- remember the final display will be
+%halved resolution
+dotRadius = 10;
+dotColour = [255, 255, 255];
+bkgColour = [.5,.5,.5]*255;
+targetRadius = 100;
+center = [960/2, 540/2];
+ox = center(1);
+oy = center(2);
+
+% set probe parameters
+probe_dur = 40;  % duration in frames
+probe_diam = dva2pix(1);  % probe diameter in dva
+probeRect = [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+[ox,oy,ox,oy];
+red = [1,.4,.3]*255;
+blue = [.1,.6,1]*255;
+probe_replica_xoffset = -250;
+probe_replica_yoffset = 0;
+probeRect_rep = ...
+    [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+ ...
+    [ox+probe_replica_xoffset,oy+probe_replica_yoffset, ...
+    ox+probe_replica_xoffset,oy+probe_replica_yoffset];
 
 % set grating parameters
 if cnd == 1
@@ -64,22 +65,10 @@ elseif cnd == 2
 end
 contrast = 5;
 squareRect = [-gr_width/2, -gr_height/2, gr_width/2, gr_height/2] + [ox,oy,ox,oy];
-
-% set probe parameters
-probe_dur = 5;  % duration in frames
-probe_diam = dva2pix(1);  % probe diameter in dva
-probeRect = [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+[ox,oy,ox,oy];
-red = [1,.4,.3]*255;
-blue = [.1,.6,1]*255;
-probe_replica_xoffset = -250;
-probe_replica_yoffset = 0;
-probeRect_rep = ...
-    [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+ ...
-    [ox+probe_replica_xoffset,oy+probe_replica_yoffset, ...
-    ox+probe_replica_xoffset,oy+probe_replica_yoffset];
+grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [0,0,0,0]);
 
 % set motion parameters
-ref_rate = 30;
+ref_rate = 1440/3;
 if cnd == 1
     phase_shift = 360;
 elseif cnd == 2
@@ -95,98 +84,74 @@ phase_vec_leg1 = [repelem(phase_vec_cyc(1),probe_dur), phase_vec_cyc(2:end-1)];
 phase_vec_leg2 = [repelem(phase_vec_cyc_rev(1),probe_dur), phase_vec_cyc_rev(2:end-1)];
 phase_vec_wrev = [phase_vec_leg1, phase_vec_leg2];  % w/ reversal
 
-% set fixation mark parameters
-fix_color = [1 0 0];
-fix_x = ox + probe_replica_xoffset;
-fix_y = oy + 0;
-
 % set mouse/keyboard parameters
-[mousex0,~] = GetMouse(win);  % initial mouse position
-HideCursor();
+[mousex0,~] = GetMouse(windowPtr);  % initial mouse position
+% HideCursor();
 
-% #######################################################################################
+% RUN THE TASK
 
-% RUN THE STIMULUS
+% reset keyboard inputs
+key_logic = zeros(1,256);
 
-for itrial = 1:ntrials
-        
-    % reset keyboard inputs
-    key_logic = zeros(1,256);
+% run pause period
+for iframe = 1:ref_rate
+    Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
+    PsychProPixx('QueueImage', stimulusBuffer);
+end
+
+counter = 1;
+
+while 1
     
-    % run pause period
-    for iframe = 1:ref_rate
-        Screen('Flip', win);
+    %Clear our stimulusBuffer by creating an all-black background
+    Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
+    
+    % draw grating
+    phase = phase_offset + phase_vec_wrev(counter);
+    Screen('DrawTexture', stimulusBuffer, grating, [], squareRect, [], [], [], [], [], [], ...
+        [phase, freq, contrast, 0]);
+    if phase_vec_wrev(counter) == 0
+        % flash red probe
+        Screen('FillOval', stimulusBuffer, red, probeRect);
+    elseif phase_vec_wrev(counter) == phase_shift
+        % flash blue probe
+        Screen('FillOval', stimulusBuffer, blue, probeRect);
     end
-
-    % run stimulus period until either 'space' or 'escape' is pressed
-    while ~any(key_logic([KbName('space'), KbName('escape')]))
-
-        for iphase = phase_vec_wrev
-
-            % add fixation mark 
-            % DrawFormattedText(win, '+', fix_x, fix_y, fix_color);
-
-            % add grating
-            phase = phase_offset + iphase;
-            gabor = CreateProceduralSineGrating(win, gr_width, gr_height, [0,0,0,0]);
-            Screen('DrawTexture', win, gabor, [], squareRect, [], [], [], [], [], [], ...
-                [phase, freq, contrast, 0]);
-
-            if iphase == 0
-                % flash red probe
-                Screen('FillOval', win, red, probeRect);
-            elseif iphase == phase_shift
-                % flash blue probe
-                Screen('FillOval', win, blue, probeRect);
-            end
-
-            % scan for mouse position
-            [mousex,~] = GetMouse(win);
-            % cal position change from the initial position
-            mousex_dif = mousex-mousex0;
-            mouse_dif_v = [mousex_dif,0,mousex_dif,0];
-
-            % add replica probes
-            Screen('FillOval', win, red, probeRect_rep-mouse_dif_v);
-            Screen('FillOval', win, blue, probeRect_rep+mouse_dif_v);
-
-            % break the loop when space or escape pressed
-            [~, ~, key_logic] = KbCheck;
-            if any(key_logic([KbName('space'), KbName('escape')]))
-                break;
-            end
+    
+    % scan for mouse position
+    [mousex,~] = GetMouse(windowPtr);
+    % cal position change from the initial position
+    mousex_dif = mousex-mousex0;
+    mouse_dif_v = [mousex_dif,0,mousex_dif,0];
             
-            Screen('Flip', win);
-
-        end
-
+    % add replica probes
+    Screen('FillOval', stimulusBuffer, red, probeRect_rep-mouse_dif_v);
+    Screen('FillOval', stimulusBuffer, blue, probeRect_rep+mouse_dif_v);
+    
+    %Add the new image to our queue; the queue flips automatically once
+    %12 frames have been added
+    PsychProPixx('QueueImage', stimulusBuffer);
+    
+    counter = counter +1;
+    
+    %If we run out of target locations, loop back to the beginning
+    if counter > length(phase_vec_wrev)
+        counter = 1;
     end
-
-    % store mouse position after space bar press
-    new_data.itrial = itrial;
-    new_data.perceived_offset_pix = mousex_dif * 2;
-    new_data.perceived_offset_dva = pix2dva(mousex_dif * 2);
-
-    % save trial's response
-    if itrial == 1
-        data = new_data;
-        save(save_directory, 'data')
-    else
-        load(save_directory, 'data');
-        data = [data; new_data];
-        save(save_directory, 'data')
+    
+    %Keypress to exit
+    [keyIsDown, ~, ~, ~] = KbCheck;
+    if keyIsDown
+        break
     end
+end
 
-    % quit session if 'escape' pressed
-    if key_logic(KbName('escape'))
-        break;
-    end
+%Close
+Datapixx('SetPropixxDlpSequenceProgram', 0);
+Datapixx('RegWrRd');
 
-end 
-
-Screen('CloseAll');
-
-warning(warning_state);
+PsychProPixx('DisableFastDisplayMode', 1);
+Screen('Closeall');
 
 % #######################################################################################
 
