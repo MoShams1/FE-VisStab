@@ -1,4 +1,4 @@
-   
+    
 
 % script to test whether the Propixx properly works at 1440 fps
 % by Richard Schweitzer, 11/2022
@@ -9,7 +9,7 @@ close all
 % try 5 Hz flicker to experience a nice infinite looming effect
 
 %% Demo specifications
-use_1440fps = 1;                % use Propixx? set 0 zero to test in dummy mode
+use_1440fps = 0;                % use Propixx? set 0 zero to test in dummy mode
 desired_n_frames_per_polarity = 12; % how many frames per polarity?
 demo_duration = 1;          % for how long should the demo run? (in seconds)
 center_rect_width_pix = 200; % size of center rectangle for flicker (in pixels)

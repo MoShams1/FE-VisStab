@@ -2,15 +2,13 @@ clc
 clear all
 close all
 
+tic
+
 % #########################################################################
 
 % SESSIOINS'S META DATA
-subj = 'test';
-n_tr_per_cnd = 20;
 
-vel_portion_vec = .2:.2:1.4;
-% vel_portion_vec = 1 * ones(1,6);
-ntrials = n_tr_per_cnd * length(vel_portion_vec);
+subj = 'ms01';  % keep it at four characters
 
 timestamp = datetime('now');
 timestamp = datestr(timestamp, 'yyyymmdd_HHMMSS');
@@ -20,11 +18,17 @@ save_directory = fullfile('..','data','cyc01',save_file_name);
 % #########################################################################
 
 % KEY PARAMETERS
+vel_coeffs_base = .2:.2:1.4;
+phase_shift_base = [180, 360];
+n_tr_per_cnd = 6;
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
 ref_rate = 480;
 
 % #########################################################################
+
+% SETUP SCREEN
+
 %Check connection and open Datapixx if it's not open yet
 isConnected = Datapixx('isReady');
 if ~isConnected
@@ -46,6 +50,12 @@ Datapixx('RegWrRd');
 PsychProPixx('SetupFastDisplayMode', windowPtr, 4, 0);
 stimulusBuffer = PsychProPixx('GetImageBuffer');
 
+% #########################################################################
+
+% SETUP STIMULUS PARAMETERS
+
+ntrials = n_tr_per_cnd * length(vel_coeffs_base) * length(phase_shift_base);
+
 %Set up some stimulus characteristics-- remember the final display will be
 %halved resolution
 dotRadius = 10;
@@ -55,14 +65,15 @@ targetRadius = 100;
 center = [960/2, 540/2];
 ox = center(1);
 oy = center(2);
-
-% set probe parameters
+                                           
+% set probe parameters  
+probe_vertical_offset = 70;
 probe_diam = dva2pix(1);  % probe diameter in dva
 probeRect = [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+[ox,oy,ox,oy];
 red = [1,.4,.3]*255;
 blue = [.1,.6,1]*255;
-probe_replica_xoffset = 150;
-probe_replica_yoffset = -200;
+probe_replica_xoffset = -150;
+probe_replica_yoffset = +100;
 probeRect_rep = ...
     [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+ ...
     [ox+probe_replica_xoffset,oy+probe_replica_yoffset, ...
@@ -71,7 +82,7 @@ probeRect_rep = ...
 % set grating parameters
 ncyc = 3;
 gr_width_dva = 15;
-gr_height_dva = 10;
+gr_height_dva = 5;
 cyc_dva = gr_width_dva / ncyc;
 gr_width = dva2pix(gr_width_dva);
 gr_height = dva2pix(gr_height_dva);
@@ -84,20 +95,11 @@ grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [1,1,
 
 % set motion parameters
 pause_dur = pause_dur_ms * ref_rate / 1000;  % duration in frames
-phase_shift_deg = 360;
-% if cnd == 1
-%     phase_shift_deg = 360;
-% elseif cnd == 2
-%     phase_shift_deg = 180;
-% end
-amp_dva = gr_width_dva/ncyc * phase_shift_deg/360;
-vel_dva_per_s = mainsequence(amp_dva);
-vel_cyc_per_s = vel_dva_per_s / cyc_dva;
 
 % gap period (inter-trial interval)
 gap_dur_ms = 1000;
 gap_dur = gap_dur_ms * ref_rate / 1000;
-
+      
 % set mouse/keyboard parameters
 [mousex0,~] = GetMouse(windowPtr);  % initial mouse position
 HideCursor();
@@ -109,23 +111,47 @@ HideCursor();
 ind_shuffle = randperm(ntrials);
 
 % create velocity conditions
-vel_portion_coeffs = repelem(vel_portion_vec, n_tr_per_cnd);
-vel_portion_coeffs = vel_portion_coeffs(ind_shuffle);
+vel_coeffs_vec = repelem(vel_coeffs_base, ntrials/length(vel_coeffs_base));
+vel_coeffs_vec = vel_coeffs_vec(ind_shuffle);
 
 % create phase-shift conditions
-phase_shift_vec = repmat(repelem([180, 360], n_tr_per_cnd/2), 1, length(vel_portion_vec));
+phase_shift_vec = repmat(repelem(phase_shift_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)), 1, length(vel_coeffs_base));
 phase_shift_vec = phase_shift_vec(ind_shuffle);
 
 % #########################################################################
 
+% RUN SESSION
+
+% run opening screen
+opening_text = '<spacebar> Begin      <escape> Abort';
+% reset keyboard inputs
+key_logic = zeros(1,256);
+while ~any(key_logic([KbName('space'), KbName('escape')]))
+    Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
+    DrawFormattedText(stimulusBuffer, opening_text, 'center', 'center', [0 0 0])
+    PsychProPixx('QueueImage', stimulusBuffer);
+    % break the loop when space pressed
+    [~, ~, key_logic] = KbCheck;
+    if any(key_logic([KbName('space'), KbName('escape')]))
+        break;
+    end
+end
+
 for itrial = 1:ntrials
     
-    % #####################################################################
+    % -----------------------------------
     
     % SET TRIAL-SPECIFIC PARAMETERS
     
-    vel_coef = vel_portion_coeffs(itrial);
+    % extract phase shift and calculate max velocity per second
+    phase_shift_deg = phase_shift_vec(itrial);
+    amp_dva = gr_width_dva/ncyc * phase_shift_deg/360;
+    vel_dva_per_s = mainsequence(amp_dva);
+    vel_cyc_per_s = vel_dva_per_s / cyc_dva;
     
+    % extract velocity coefficient, update the velocity, create motion
+    % vector
+    vel_coef = vel_coeffs_vec(itrial);    
     phase_vec_cyc = linspace(0, phase_shift_deg, ref_rate / (vel_cyc_per_s * vel_coef) * phase_shift_deg / 360);
     phase_vec_cyc_rev = fliplr(phase_vec_cyc);
     phase_vec_leg1 = [repelem(phase_vec_cyc(1),pause_dur), phase_vec_cyc(2:end-1)];
@@ -141,16 +167,16 @@ for itrial = 1:ntrials
     flash_vec_leg2(pause_wo_flash/2+1:pause_wo_flash/2+flash_dur) = 2;
     flash_vec_wrev = [flash_vec_leg1, flash_vec_leg2];  % w/ reversal
     
-    % #####################################################################    
+    % -----------------------------------
     
     % RUN STIMULUS
     
-    % reset keyboard inputs
-    key_logic = zeros(1,256);
+    % reset space press but not escape press
+    key_logic(KbName('space')) = 0;
     
     % run gap period
-    for iframe = 1:gap_dur
-        Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
+    for iframe = 1:gap_dur        
+        Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);        
         PsychProPixx('QueueImage', stimulusBuffer);
     end
     
@@ -167,10 +193,10 @@ for itrial = 1:ntrials
             [phase, freq, contrast, 0]);
         if flash_vec_wrev(counter) == 1
             % flash red probe
-            Screen('FillOval', stimulusBuffer, red, probeRect);
+            Screen('FillOval', stimulusBuffer, red, probeRect-[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
         elseif flash_vec_wrev(counter) == 2
             % flash blue probe
-            Screen('FillOval', stimulusBuffer, blue, probeRect);
+            Screen('FillOval', stimulusBuffer, blue, probeRect+[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
         end
 
         % scan for mouse position
@@ -206,7 +232,7 @@ for itrial = 1:ntrials
         break;
     end
     
-    % #####################################################################    
+    % -----------------------------------
     
     % SAVE DATA
     
@@ -237,6 +263,8 @@ Datapixx('RegWrRd');
 
 PsychProPixx('DisableFastDisplayMode', 1);
 Screen('Closeall');
+
+session_duration_min = toc/60
 
 % #########################################################################
 
