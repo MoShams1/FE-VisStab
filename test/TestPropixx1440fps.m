@@ -9,13 +9,13 @@ close all
 % try 5 Hz flicker to experience a nice infinite looming effect
 
 %% Demo specifications
-use_1440fps = 1;                % use Propixx? set 0 zero to test in dummy mode
+use_1440fps = 0;                % use Propixx? set 0 zero to test in dummy mode
 desired_n_frames_per_polarity = 12; % how many frames per polarity?
 demo_duration = 1;          % for how long should the demo run? (in seconds)
 center_rect_width_pix = 200; % size of center rectangle for flicker (in pixels)
 center_rect_height_pix = 200;
 low_high_offset = 0.05;      % 0: maximum and minimum luminance, 0.5: no luminance change
-skip_sync_tests = 0;        % set to 1 if you want skip ptb3 synch tests
+skip_sync_tests = 1;        % set to 1 if you want skip ptb3 synch tests
 use_flipmethod = 0;         % you should always use flipmethod 0, as only this one gives your reliable flip timestamps
 
 %% Screen specifications
