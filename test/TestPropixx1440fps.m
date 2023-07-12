@@ -1,4 +1,4 @@
-   
+    
 
 % script to test whether the Propixx properly works at 1440 fps
 % by Richard Schweitzer, 11/2022
