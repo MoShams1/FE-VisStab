@@ -27,8 +27,6 @@ ref_rate = 480;
 ncyc = 2;
 gr_width_dva = 25;
 gr_height_dva = 5;
-probe_replica_xoffset = -250;
-probe_replica_yoffset = +100;
 
 % #########################################################################
 
@@ -77,6 +75,8 @@ probe_diam = dva2pix(1);  % probe diameter in dva
 probeRect = [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+[ox,oy,ox,oy];
 red = [1,.4,.3]*255;
 blue = [.1,.6,1]*255;
+probe_replica_xoffset = -150;
+probe_replica_yoffset = +100;
 probeRect_rep = ...
     [-probe_diam/2,-probe_diam/2,probe_diam/2,probe_diam/2]+ ...
     [ox+probe_replica_xoffset,oy+probe_replica_yoffset, ...
@@ -120,9 +120,6 @@ phase_shift_vec = phase_shift_vec(ind_shuffle);
 % #########################################################################
 
 % RUN SESSION
-
-% disable keyboard
-ListenChar(2);
 
 % run opening screen
 opening_text = '<spacebar> Begin      <escape> Abort';
@@ -184,13 +181,13 @@ for itrial = 1:ntrials
     
     counter = 1;
     
-    while ~any(key_logic([KbName('space'), KbName('escape')]))
+    while ~any(key_logic([KbName('space'), KbName('es cape')]))
                
         %Clear our stimulusBuffer by creating an all-black background
         Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
         
         % add fixation area 
-        Screen('DrawLine', stimulusBuffer, [0 0 0], 0, 80, 1920, 80, 3);
+        Screen('FrameOval', stimulusBuffer, [0 0 0], [-400 -200 4 00 200]+[ox oy ox oy])
 
         % draw grating
         phase = phase_offset + phase_vec_wrev(counter);
@@ -234,8 +231,6 @@ for itrial = 1:ntrials
     
     % quit session if 'escape' pressed
     if key_logic(KbName('escape'))
-        % re-activate keyboard
-        ListenChar(0);
         break;
     end
     
