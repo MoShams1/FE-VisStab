@@ -18,14 +18,15 @@ save_directory = fullfile('..','data','cyc01',save_file_name);
 % #########################################################################
 
 % KEY PARAMETERS
-vel_coeffs_base = .2:.2:1.4;
-phase_shift_base = [180, 360];
+% vel_coeffs_base = .2:.2:1.4; 0.05-3
+vel_coeffs_base = 1.4 * ones(1,7);
+phase_shift_base = [360, 360];
 n_tr_per_cnd = 6;  % must be an even number
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
 ref_rate = 480;
 ncyc = 2;
-gr_width_dva = 25;
+gr_width_dva = 25; % 15,25,35
 gr_height_dva = 5;
 probe_replica_xoffset = -250;
 probe_replica_yoffset = +100;
@@ -88,7 +89,7 @@ gr_width = dva2pix(gr_width_dva);
 gr_height = dva2pix(gr_height_dva);
 freq = ncyc/gr_width;  % cycles per pixel
 phase_offset = 0;
-contrast = 1  ;
+contrast = 1;
 squareRect = [-gr_width/2, -gr_height/2, gr_width/2, gr_height/2] + [ox,oy,ox,oy];
 grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [1,1,1,0]*.5);
 
