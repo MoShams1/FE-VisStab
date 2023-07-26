@@ -18,14 +18,14 @@ save_directory = fullfile('..','data','cyc01',save_file_name);
 % #########################################################################
 
 % KEY PARAMETERS
-% vel_coeffs_base = .2:.2:1.4; 0.05-3
-vel_coeffs_base = 1.4 * ones(1,7);
-phase_shift_base = [360, 360];
+% vel_coeffs_base = .2:.2:1.4;
+vel_coeffs_base = 4 * ones(1,7);
+phase_shift_base = [180, 180];
 n_tr_per_cnd = 6;  % must be an even number
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
 ref_rate = 480;
-ncyc = 2;
+ncyc = 4;
 gr_width_dva = 25; % 15,25,35
 gr_height_dva = 5;
 probe_replica_xoffset = -250;
