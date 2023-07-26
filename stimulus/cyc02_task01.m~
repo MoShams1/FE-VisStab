@@ -24,7 +24,7 @@ phase_shift_base = [180, 180];
 n_tr_per_cnd = 6;  % must be an even number
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
-ref_rate = 480;
+ref_rate = 1440;
 ncyc = 4;
 gr_width_dva = 25; % 15,25,35
 gr_height_dva = 5;
@@ -96,7 +96,7 @@ gr_width = dva2pix(gr_width_dva);
 gr_height = dva2pix(gr_height_dva);
 freq = ncyc/gr_width;  % cycles per pixel
 phase_offset = 0;
-contrast = 1;
+contrast = 5;
 squareRect = [-gr_width/2, -gr_height/2, gr_width/2, gr_height/2] + [ox,oy,ox,oy];
 grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [1,1,1,0]*.5);
 
@@ -205,11 +205,11 @@ for itrial = 1:ntrials
         Screen('DrawTexture', stimulusBuffer, grating, [], squareRect, [], [], [], [], [], [], ...
             [phase, freq, contrast, 0]);
         if flash_vec_wrev(counter) == 1
-            % flash red probe
-            Screen('FillOval', stimulusBuffer, red, probeRect-[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
+            % flash upper probe
+            DrawFormattedText(stimulusBuffer, 'V', ox, oy-probe_vertical_offset/2, [0 0 0], [], [], [])
         elseif flash_vec_wrev(counter) == 2
-            % flash blue probe
-            Screen('FillOval', stimulusBuffer, blue, probeRect+[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
+            % flash bottom probe
+            DrawFormattedText(stimulusBuffer, 'V', ox, oy+probe_vertical_offset/2-10, [0 0 0], [], [], )
         end
 
         % scan for mouse position
