@@ -1,6 +1,8 @@
 clc
-clear all
+clear
 close all
+
+pix2dva(70)
 
 tic
 
@@ -18,9 +20,15 @@ save_directory = fullfile('..','data','cyc01',save_file_name);
 % #########################################################################
 
 % KEY PARAMETERS
+<<<<<<< HEAD
 % vel_coeffs_base = .2:.2:1.4;
 vel_coeffs_base = 1 * ones(1,7);
 phase_shift_base = [180, 180];
+=======
+vel_coeffs_base = .2:.2:1.4;
+% vel_coeffs_base = 1.4 * ones(1,7);
+phase_shift_base = [180, 360];
+>>>>>>> 0ecd4eac0e5866a0f035636f134f16f05eca282f
 n_tr_per_cnd = 6;  % must be an even number
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
@@ -176,6 +184,9 @@ for itrial = 1:ntrials
     flash_vec_leg1(pause_wo_flash/2+1:pause_wo_flash/2+flash_dur) = 1;
     flash_vec_leg2(pause_wo_flash/2+1:pause_wo_flash/2+flash_dur) = 2;
     flash_vec_wrev = [flash_vec_leg1, flash_vec_leg2];  % w/ reversal
+
+    % decide on probe order (1: top/red first | 2: bottom/blue first)
+    probe_order = datasample([1,2],1);
     
     % -----------------------------------
     
@@ -204,12 +215,23 @@ for itrial = 1:ntrials
         phase = phase_offset + phase_vec_wrev(counter);
         Screen('DrawTexture', stimulusBuffer, grating, [], squareRect, [], [], [], [], [], [], ...
             [phase, freq, contrast, 0]);
-        if flash_vec_wrev(counter) == 1
-            % flash red probe
-            Screen('FillOval', stimulusBuffer, red, probeRect-[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
-        elseif flash_vec_wrev(counter) == 2
-            % flash blue probe
-            Screen('FillOval', stimulusBuffer, blue, probeRect+[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
+
+        if probe_order == 1
+            if flash_vec_wrev(counter) == 1
+                % flash red probe
+                Screen('FillOval', stimulusBuffer, red, probeRect-[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
+            elseif flash_vec_wrev(counter) == 2
+                % flash blue probe
+                Screen('FillOval', stimulusBuffer, blue, probeRect+[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
+            end
+        else
+            if flash_vec_wrev(counter) == 2
+                % flash red probe
+                Screen('FillOval', stimulusBuffer, red, probeRect-[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
+            elseif flash_vec_wrev(counter) == 1
+                % flash blue probe
+                Screen('FillOval', stimulusBuffer, blue, probeRect+[0 probe_vertical_offset/2 0 probe_vertical_offset/2]);
+            end
         end
 
         % scan for mouse position
