@@ -8,7 +8,7 @@ tic
 
 % SESSIOINS'S META DATA
 
-subj = 'MS01 ';  % keep it at four characters
+subj = 'test ';  % keep it at four characters
 
 timestamp = datetime('now');
 timestamp = datestr(timestamp, 'yyyymmdd_HHMMSS');
@@ -18,16 +18,16 @@ save_directory = fullfile('..','data','cyc03',save_file_name);
 % #########################################################################
 
 % KEY PARAMETERS
-vel_coeffs_base = [.05, .15, .45, 1.35, 4.05, 12.15];
+vel_coeffs_base = [.125, .25, .5, 1, 2, 4, 8];
 % vel_coeffs_base = .05 * ones(1,7);
 phase_shift_base = [180, 360];
 flash_order_base = [-1, 1];
+gr_width_base = [15 25 35];
 n_tr_per_cnd = 3;
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
 ref_rate = 1440;
 ncyc = 4;
-gr_width_dva = 25; % 15,25,35
 gr_height_dva = 5;
 probe_replica_xoffset = -250;
 probe_replica_yoffset = +100;
@@ -68,7 +68,7 @@ stimulusBuffer = PsychProPixx('GetImageBuffer');
 
 % SETUP STIMULUS PARAMETERS
 
-ntrials = n_tr_per_cnd * length(vel_coeffs_base) * length(phase_shift_base) * length(flash_order_base);
+ntrials = n_tr_per_cnd * length(vel_coeffs_base) * length(phase_shift_base) * length(flash_order_base) * length(gr_width_base);
 
 %Set up some stimulus characteristics-- remember the final display will be
 %halved resolution
@@ -83,24 +83,13 @@ oy = center(2);
 % set probe parameters  
 probe_voffset = 50; 
 
-
-% set grating parameters
-cyc_dva = gr_width_dva / ncyc;
-gr_width = dva2pix(gr_width_dva);
-gr_height = dva2pix(gr_height_dva);
-freq = ncyc/gr_width;  % cycles per pixel
-phase_offset = 0;
-contrast = 1;
-squareRect = [-gr_width/2, -gr_height/2, gr_width/2, gr_height/2] + [ox,oy,ox,oy];
-grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [1,1,1,0]*.5);
-
 % set motion parameters
 pause_dur = pause_dur_ms * ref_rate / 1000;  % duration in frames
 
 % gap period (inter-trial interval)
 gap_dur_ms = 1000;
 gap_dur = gap_dur_ms * ref_rate / 1000;
-      
+
 % set mouse/keyboard parameters
 [mousex0,~] = GetMouse(windowPtr);  % initial mouse position
 HideCursor();
@@ -120,9 +109,12 @@ phase_shift_vec = repmat(repelem(phase_shift_base, ntrials/length(vel_coeffs_bas
 phase_shift_vec = phase_shift_vec(ind_shuffle);
 
 % create flash order conditions
-% flash_order_vec = repmat([-1 -1 -1 1 1 1],1,12);
 flash_order_vec = repmat(repelem(flash_order_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)), 1, length(phase_shift_base)*length(vel_coeffs_base));
 flash_order_vec = flash_order_vec(ind_shuffle);
+
+% create grating width conditions
+gr_width_vec = repmat(repelem(gr_width_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base));
+gr_width_vec = gr_width_vec(ind_shuffle);
 
 % #########################################################################
 
@@ -146,15 +138,52 @@ while ~any(key_logic([KbName('space'), KbName('escape')]))
     end
 end
 
+pause_trials = linspace(1,ntrials+1, 4+1);  % to have (4 blocks or 3 breaks)
+pause_trials(1) = [];
+pause_trials(end) = [];
+
 for itrial = 1:ntrials
+    
+     if any(itrial == pause_trials)         
+        passed_block = find(itrial == pause_trials);
+        % run pause screen
+        opening_text = ['Blocks done: ', num2str(passed_block), '/', num2str(length(pause_trials)+1)];
+        command_text = '<spacebar> Continue';
+        % reset keyboard inputs
+        key_logic = zeros( 1,256);
+        WaitSecs(.1);
+        while ~any(key_logic([KbName('space'), KbName('escape')]))
+            Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
+            DrawFormattedText(stimulusBuffer, opening_text, 'center', 'center', [0 0 0]);
+            DrawFormattedText(stimulusBuffer, command_text, 'center', 200, [0 0 0]);
+            PsychProPixx('QueueImage', stimulusBuffer);
+            % break the loop when space pressed
+            [~, ~, key_logic] = KbCheck;
+            if any(key_logic([KbName('space'), KbName('escape')]))
+                break;
+            end
+        end
+    end
+    
     
     % -----------------------------------
     
     % SET TRIAL-SPECIFIC PARAMETERS
     
+    % set grating parameters
+    gr_width_dva = gr_width_vec(itrial);
+    cyc_dva = gr_width_dva / ncyc;
+    gr_width = dva2pix(gr_width_dva);
+    gr_height = dva2pix(gr_height_dva);
+    freq = ncyc/gr_width;  % cycles per pixel
+    phase_offset = 0;
+    contrast = 1;
+    squareRect = [-gr_width/2, -gr_height/2, gr_width/2, gr_height/2] + [ox,oy,ox,oy];
+    grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [1,1,1,0]*.5);
+    
     % extract phase shift and calculate max velocity per second
-    phase_shift_deg = phase_shift_vec(itrial);
-    amp_dva = gr_width_dva/ncyc * phase_shift_deg/360;
+    phase_shift_deg = phase_shift_vec(itrial);    
+    amp_dva = gr_width_dva / ncyc * phase_shift_deg/360;
     vel_dva_per_s = mainsequence(amp_dva);
     vel_cyc_per_s = vel_dva_per_s / cyc_dva;
     
