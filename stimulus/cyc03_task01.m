@@ -79,9 +79,9 @@ targetRadius = 100;
 center = [960/2, 540/2];
 ox = center(1);
 oy = center(2);
-                                           
-% set probe parameters  
-probe_voffset = 50; 
+
+% set probe parameters
+probe_voffset = 50;
 
 % set motion parameters
 pause_dur = pause_dur_ms * ref_rate / 1000;  % duration in frames
@@ -131,27 +131,28 @@ while ~any(key_logic([KbName('space'), KbName('escape')]))
     Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
     DrawFormattedText(stimulusBuffer, opening_text, 'center', 'center', [0 0 0]);
     PsychProPixx('QueueImage', stimulusBuffer);
-    % break the loop when space pressed
-    [~, ~, key_logic] = KbCheck;
+    % break the loop when space pressed    
+    [~, ~, key_logic] = KbCheck;    
     if any(key_logic([KbName('space'), KbName('escape')]))
+        KbWait([], 1);
         break;
     end
 end
 
-pause_trials = linspace(1,ntrials+1, 4+1);  % to have (4 blocks or 3 breaks)
+pause_trials = linspace(1,ntrials+1, 4+1);  % to have (4 blocks w/ 3 breaks)
 pause_trials(1) = [];
 pause_trials(end) = [];
+pause_trials = [2 4 6];
 
 for itrial = 1:ntrials
     
-     if any(itrial == pause_trials)         
+    if any(itrial == pause_trials)
         passed_block = find(itrial == pause_trials);
         % run pause screen
         opening_text = ['Blocks done: ', num2str(passed_block), '/', num2str(length(pause_trials)+1)];
         command_text = '<spacebar> Continue';
         % reset keyboard inputs
         key_logic = zeros( 1,256);
-        WaitSecs(.1);
         while ~any(key_logic([KbName('space'), KbName('escape')]))
             Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
             DrawFormattedText(stimulusBuffer, opening_text, 'center', 'center', [0 0 0]);
@@ -160,6 +161,7 @@ for itrial = 1:ntrials
             % break the loop when space pressed
             [~, ~, key_logic] = KbCheck;
             if any(key_logic([KbName('space'), KbName('escape')]))
+                KbWait([], 1);
                 break;
             end
         end
@@ -182,14 +184,14 @@ for itrial = 1:ntrials
     grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [1,1,1,0]*.5);
     
     % extract phase shift and calculate max velocity per second
-    phase_shift_deg = phase_shift_vec(itrial);    
+    phase_shift_deg = phase_shift_vec(itrial);
     amp_dva = gr_width_dva / ncyc * phase_shift_deg/360;
     vel_dva_per_s = mainsequence(amp_dva);
     vel_cyc_per_s = vel_dva_per_s / cyc_dva;
     
     % extract velocity coefficient, update the velocity, create motion
     % vector
-    vel_coef = vel_coeffs_vec(itrial);    
+    vel_coef = vel_coeffs_vec(itrial);
     phase_vec_cyc = linspace(0, phase_shift_deg, ref_rate / (vel_cyc_per_s * vel_coef) * phase_shift_deg / 360);
     phase_vec_cyc_rev = fliplr(phase_vec_cyc);
     phase_vec_leg1 = [repelem(phase_vec_cyc(1),pause_dur), phase_vec_cyc(2:end-1)];
@@ -223,21 +225,21 @@ for itrial = 1:ntrials
     key_logic(KbName('space')) = 0;
     
     % run gap period
-    for iframe = 1:gap_dur        
-        Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);        
+    for iframe = 1:gap_dur
+        Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
         PsychProPixx('QueueImage', stimulusBuffer);
     end
     
     counter = 1;
     
     while ~any(key_logic([KbName('space'), KbName('escape')]))
-               
+        
         %Clear our stimulusBuffer by creating an all-black background
         Screen('FillRect', stimulusBuffer, bkgColour, [0,0,960,540]);
         
-        % add fixation area 
+        % add fixation area
         Screen('DrawLine', stimulusBuffer, [0 0 0], 0, 80, 1920, 80, 3);
-
+        
         % draw grating
         phase = phase_offset + phase_vec_wrev(counter);
         Screen('DrawTexture', stimulusBuffer, grating, [], squareRect, [], [], [], [], [], [], ...
@@ -255,12 +257,12 @@ for itrial = 1:ntrials
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox-5, oy+10+probe_voffset/2, ox, oy+probe_voffset/2, 1);
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox, oy+probe_voffset/2, ox+5, oy+10+probe_voffset/2, 1);
         end
-
+        
         % scan for mouse position
         [mousex,~] = GetMouse(windowPtr);
         % cal position change from the initial position
-        mousex_dif = (mousex-mousex0)/5;        
-
+        mousex_dif = (mousex-mousex0)/5;
+        
         % add replica probes
         oxrep = ox+probe_replica_xoffset;
         oyrep = oy+probe_replica_yoffset;
@@ -273,27 +275,29 @@ for itrial = 1:ntrials
         Screen('DrawLine', stimulusBuffer, [0 0 0 0], oxrep-mousex_dif/2, oyrep, oxrep+5-mousex_dif/2, oyrep+10, 5);
         Screen('DrawLine', stimulusBuffer, [255 255 255 0], oxrep-5-mousex_dif/2, oyrep+10, oxrep-mousex_dif/2, oyrep, 1);
         Screen('DrawLine', stimulusBuffer, [255 255 255 0], oxrep-mousex_dif/2, oyrep, oxrep+5-mousex_dif/2, oyrep+10, 1);
-
+        
         %Add the new image to our queue; the queue flips automatically once
         %4 (at 480 Hz) or 12 (at 1440 Hz) frames have been added
         PsychProPixx('QueueImage', stimulusBuffer);
-
+        
         counter = counter +1;
-
+        
         %If we run out of target locations, loop back to the beginning
         if counter > length(phase_vec_wrev)
             counter = 1;
         end
-
+        
         % break the loop when space or escape pressed
         [~, ~, key_logic] = KbCheck;
         if any(key_logic([KbName('space'), KbName('escape')]))
+            KbWait([], 1);
             break;
         end
     end
     
     % quit session if 'escape' pressed
     if key_logic(KbName('escape'))
+        KbWait([], 1);
         % re-activate keyboard
         ListenChar(0);
         break;
@@ -316,7 +320,7 @@ for itrial = 1:ntrials
     new_data.flash_order = flash_order;
     new_data.perceived_offset_pix = mousex_dif;
     new_data.perceived_offset_dva = pix2dva(mousex_dif);
-        
+    
     % save trial's response
     if itrial == 1
         data = new_data;
@@ -324,7 +328,7 @@ for itrial = 1:ntrials
     else
         load(save_directory, 'data');
         data = [data; new_data];
-        save(save_directory, 'data')  
+        save(save_directory, 'data')
     end
 end
 
