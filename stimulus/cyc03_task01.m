@@ -142,7 +142,6 @@ end
 pause_trials = linspace(1,ntrials+1, 4+1);  % to have (4 blocks w/ 3 breaks)
 pause_trials(1) = [];
 pause_trials(end) = [];
-pause_trials = [2 4 6];
 
 for itrial = 1:ntrials
     
