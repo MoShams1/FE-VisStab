@@ -1,5 +1,10 @@
 
-% (2023) Mo Shams <MShamsCBR@gmail.com>
+% Mo Shams 2023 <MShamsCBR@gmail.com>
+
+% The grating moves 180 deg.
+% The grating moves in two ways: uni-directional, or reversive.
+% The direction of motion is unpredictable.
+% Does the unperceivable motion induce shift?
 
 clc
 clear
@@ -15,16 +20,18 @@ subj = 'test ';  % keep it at four characters
 
 timestamp = datetime('now');
 timestamp = datestr(timestamp, 'yyyymmdd_HHMMSS');
-save_file_name = ['task01_',timestamp,'_',subj,'.mat'];
+save_file_name = ['task02_',timestamp,'_',subj,'.mat'];
 save_directory = fullfile('..','data','cyc03',save_file_name);
 
 % #########################################################################
 
 % KEY PARAMETERS
-vel_coeffs_base = [.125, .25, .5, 1, 2, 4, 8];
-phase_shift_base = [180, 360];
-flash_order_base = [-1, 1];
-gr_width_base = [20 30];
+vel_coeffs_base = .25;
+phase_shift_base = 180;
+flash_order_base = [-1, 1];  % [-1] bottom-first,  [1] top-first
+cycle_mode_base = [1, 2];  % [1] uni-directional,  [2] bi-directional
+firstleg_dir_base = [-1, 1]; %  [-1] leftward,  [1] rightward
+gr_width_base = 25;
 n_tr_per_cnd = 2;
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
@@ -70,7 +77,7 @@ stimulusBuffer = PsychProPixx('GetImageBuffer');
 
 % SETUP STIMULUS PARAMETERS
 
-ntrials = n_tr_per_cnd * length(vel_coeffs_base) * length(phase_shift_base) * length(flash_order_base) * length(gr_width_base);
+ntrials = n_tr_per_cnd * length(vel_coeffs_base) * length(phase_shift_base) * length(flash_order_base) * length(gr_width_base) * length(cycle_mode_base) * length(firstleg_dir_base);
 
 %Set up some stimulus characteristics-- remember the final display will be
 %halved resolution
@@ -117,6 +124,14 @@ flash_order_vec = flash_order_vec(ind_shuffle);
 % create grating width conditions
 gr_width_vec = repmat(repelem(gr_width_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base));
 gr_width_vec = gr_width_vec(ind_shuffle);
+
+% create cycle mode conditions
+cycle_mode_vec = repmat(repelem(cycle_mode_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)/length(cycle_mode_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base)*length(gr_width_base));
+cycle_mode_vec = cycle_mode_vec(ind_shuffle);
+
+% create first leg direction conditions
+firstleg_dir_vec = repmat(repelem(firstleg_dir_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)/length(cycle_mode_base)/length(firstleg_dir_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base)*length(gr_width_base)*length(cycle_mode_base));
+firstleg_dir_vec = firstleg_dir_vec(ind_shuffle);
 
 % #########################################################################
 
@@ -196,8 +211,19 @@ for itrial = 1:ntrials
     phase_vec_cyc = linspace(0, phase_shift_deg, ref_rate / (vel_cyc_per_s * vel_coef) * phase_shift_deg / 360);
     phase_vec_cyc_rev = fliplr(phase_vec_cyc);
     phase_vec_leg1 = [repelem(phase_vec_cyc(1),pause_dur), phase_vec_cyc(2:end-1)];
-    phase_vec_leg2 = [repelem(phase_vec_cyc_rev(1),pause_dur), phase_vec_cyc_rev(2:end-1)];
-    phase_vec_wrev = [phase_vec_leg1, phase_vec_leg2];  % w/ reversal
+    
+    % apply cycle mode
+    if cycle_mode_vec(itrial) == 2
+        phase_vec_leg2 = [repelem(phase_vec_cyc_rev(1),pause_dur), phase_vec_cyc_rev(2:end-1)];
+    else
+        phase_vec_leg2 = phase_vec_leg1 + 180;  % bi-directional
+    end    
+    phase_vec_full = [phase_vec_leg1, phase_vec_leg2];  % uni-directional
+    
+    % apply first leg direction
+    if firstleg_dir_vec(itrial) == 1
+        phase_vec_full = -phase_vec_full;
+    end
     
     % create flash vector
     flash_vec_leg1 = zeros(1,length(phase_vec_leg1));
@@ -206,7 +232,7 @@ for itrial = 1:ntrials
     pause_wo_flash = pause_dur-flash_dur;
     flash_vec_leg1(pause_wo_flash/2+1:pause_wo_flash/2+flash_dur) = 1;
     flash_vec_leg2(pause_wo_flash/2+1:pause_wo_flash/2+flash_dur) = 2;
-    flash_vec_wrev = [flash_vec_leg1, flash_vec_leg2];  % w/ reversal
+    flash_vec_full = [flash_vec_leg1, flash_vec_leg2];
     
     % randomize flash order
     flash_order = flash_order_vec(itrial);
@@ -242,16 +268,16 @@ for itrial = 1:ntrials
         Screen('DrawLine', stimulusBuffer, [0 0 0], 0, 80, 1920, 80, 3);
         
         % draw grating
-        phase = phase_offset + phase_vec_wrev(counter);
+        phase = phase_offset + phase_vec_full(counter);
         Screen('DrawTexture', stimulusBuffer, grating, [], squareRect, [], [], [], [], [], [], ...
             [phase, freq, contrast, 0]);
-        if flash_vec_wrev(counter) == flash_upper
+        if flash_vec_full(counter) == flash_upper
             % flash upper probe
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox-5, oy-10-probe_voffset/2, ox, oy-probe_voffset/2, 5);
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox, oy-probe_voffset/2, ox+5, oy-10-probe_voffset/2, 5);
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox-5, oy-10-probe_voffset/2, ox, oy-probe_voffset/2, 1);
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox, oy-probe_voffset/2, ox+5, oy-10-probe_voffset/2, 1);
-        elseif flash_vec_wrev(counter) == flash_bottom
+        elseif flash_vec_full(counter) == flash_bottom
             % flash bottom probe
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox-5, oy+10+probe_voffset/2, ox, oy+probe_voffset/2, 5);
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox, oy+probe_voffset/2, ox+5, oy+10+probe_voffset/2, 5);
@@ -284,7 +310,7 @@ for itrial = 1:ntrials
         counter = counter +1;
         
         %If we run out of target locations, loop back to the beginning
-        if counter > length(phase_vec_wrev)
+        if counter > length(phase_vec_full)
             counter = 1;
         end
         
