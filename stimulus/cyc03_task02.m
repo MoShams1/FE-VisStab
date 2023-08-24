@@ -26,12 +26,13 @@ save_directory = fullfile('..','data','cyc03',save_file_name);
 % #########################################################################
 
 % KEY PARAMETERS
-vel_coeffs_base = .25;
+vel_coeffs_base = 8;
 phase_shift_base = 180;
 flash_order_base = [-1, 1];  % [-1] bottom-first,  [1] top-first
 cycle_mode_base = [1, 2];  % [1] uni-directional,  [2] bi-directional
 firstleg_dir_base = [-1, 1]; %  [-1] leftward,  [1] rightward
 gr_width_base = 25;
+contrast_base = [1];
 n_tr_per_cnd = 2;
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
@@ -77,7 +78,14 @@ stimulusBuffer = PsychProPixx('GetImageBuffer');
 
 % SETUP STIMULUS PARAMETERS
 
-ntrials = n_tr_per_cnd * length(vel_coeffs_base) * length(phase_shift_base) * length(flash_order_base) * length(gr_width_base) * length(cycle_mode_base) * length(firstleg_dir_base);
+ntrials = n_tr_per_cnd...
+    * length(vel_coeffs_base)...
+    * length(phase_shift_base)...
+    * length(flash_order_base)...
+    * length(gr_width_base)...
+    * length(cycle_mode_base)...
+    * length(firstleg_dir_base)...
+    * length(contrast_base);
 
 %Set up some stimulus characteristics-- remember the final display will be
 %halved resolution
@@ -91,6 +99,11 @@ oy = center(2);
 
 % set probe parameters
 probe_voffset = 50;
+
+% set moving marker parameters
+marker_y = dva2pix(7.5);
+marker_width = dva2pix(.5);
+marker_height = dva2pix(.5);
 
 % set motion parameters
 pause_dur = pause_dur_ms * ref_rate / 1000;  % duration in frames
@@ -132,6 +145,10 @@ cycle_mode_vec = cycle_mode_vec(ind_shuffle);
 % create first leg direction conditions
 firstleg_dir_vec = repmat(repelem(firstleg_dir_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)/length(cycle_mode_base)/length(firstleg_dir_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base)*length(gr_width_base)*length(cycle_mode_base));
 firstleg_dir_vec = firstleg_dir_vec(ind_shuffle);
+
+% create contrast conditions
+contrast_vec = repmat(repelem(contrast_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)/length(cycle_mode_base)/length(firstleg_dir_base)/length(contrast_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base)*length(gr_width_base)*length(cycle_mode_base)*length(firstleg_dir_base));
+contrast_vec = contrast_vec(ind_shuffle);
 
 % #########################################################################
 
@@ -195,7 +212,7 @@ for itrial = 1:ntrials
     gr_height = dva2pix(gr_height_dva);
     freq = ncyc/gr_width;  % cycles per pixel
     phase_offset = 0;
-    contrast = 1;
+    contrast = contrast_vec(itrial);
     squareRect = [-gr_width/2, -gr_height/2, gr_width/2, gr_height/2] + [ox,oy,ox,oy];
     grating = CreateProceduralSineGrating(stimulusBuffer, gr_width, gr_height, [1,1,1,0]*.5);
     
@@ -234,6 +251,9 @@ for itrial = 1:ntrials
     flash_vec_leg2(pause_wo_flash/2+1:pause_wo_flash/2+flash_dur) = 2;
     flash_vec_full = [flash_vec_leg1, flash_vec_leg2];
     
+    % create moving marker's jump time
+    marker_times = find(diff(flash_vec_full) > 0);
+    
     % randomize flash order
     flash_order = flash_order_vec(itrial);
     if flash_order == 1
@@ -241,8 +261,13 @@ for itrial = 1:ntrials
         flash_bottom = 2;
     else
         flash_upper = 2;
-        flash_bottom = 1;
+        flash_bottom = 1; 
     end
+    
+    % set moving marker's starting point
+    marker_x = ox-(firstleg_dir_vec(itrial)*gr_width/2);
+    % set moving marker's direction sign
+    sign_flip = 1;
     
     % -----------------------------------
     
@@ -271,19 +296,31 @@ for itrial = 1:ntrials
         phase = phase_offset + phase_vec_full(counter);
         Screen('DrawTexture', stimulusBuffer, grating, [], squareRect, [], [], [], [], [], [], ...
             [phase, freq, contrast, 0]);
+        % add flashes
         if flash_vec_full(counter) == flash_upper
             % flash upper probe
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox-5, oy-10-probe_voffset/2, ox, oy-probe_voffset/2, 5);
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox, oy-probe_voffset/2, ox+5, oy-10-probe_voffset/2, 5);
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox-5, oy-10-probe_voffset/2, ox, oy-probe_voffset/2, 1);
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox, oy-probe_voffset/2, ox+5, oy-10-probe_voffset/2, 1);
+            
         elseif flash_vec_full(counter) == flash_bottom
             % flash bottom probe
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox-5, oy+10+probe_voffset/2, ox, oy+probe_voffset/2, 5);
             Screen('DrawLine', stimulusBuffer, [0 0 0 0], ox, oy+probe_voffset/2, ox+5, oy+10+probe_voffset/2, 5);
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox-5, oy+10+probe_voffset/2, ox, oy+probe_voffset/2, 1);
             Screen('DrawLine', stimulusBuffer, [255 255 255 0], ox, oy+probe_voffset/2, ox+5, oy+10+probe_voffset/2, 1);
+        end        
+        
+        % add moving markers        
+        if ismember(counter-720, marker_times)
+            marker_x = marker_x + sign_flip*firstleg_dir_vec(itrial)*gr_width/8;
+            % flip the sign after each show in reversal condition
+            if cycle_mode_vec(itrial) == 2
+                sign_flip = -sign_flip;
+            end
         end
+        Screen('FillOval', stimulusBuffer, [0, 0, 0], [marker_x marker_y marker_x+marker_width marker_y+marker_height]);
         
         % scan for mouse position
         [mousex,~] = GetMouse(windowPtr);

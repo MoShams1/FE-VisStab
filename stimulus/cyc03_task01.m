@@ -1,5 +1,5 @@
 
-% (2023) Mo Shams <MShamsCBR@gmail.com>
+% Mo Shams 2023 <MShamsCBR@gmail.com>
 
 clc
 clear
@@ -23,8 +23,11 @@ save_directory = fullfile('..','data','cyc03',save_file_name);
 % KEY PARAMETERS
 vel_coeffs_base = [.125, .25, .5, 1, 2, 4, 8];
 phase_shift_base = [180, 360];
-flash_order_base = [-1, 1];
+flash_order_base = [-1, 1];  % [-1] bottom-first,  [1] top-first
+cycle_mode_base = [1, 2];  % [1] uni-directional,  [2] bi-directional
+firstleg_dir_base = [-1, 1]; %  [-1] leftward,  [1] rightward
 gr_width_base = [20 30];
+contrast_base = [.25 .5 .1];
 n_tr_per_cnd = 2;
 pause_dur_ms = 1000;  % pause at each reversal
 flash_dur_ms = 50;
@@ -70,7 +73,14 @@ stimulusBuffer = PsychProPixx('GetImageBuffer');
 
 % SETUP STIMULUS PARAMETERS
 
-ntrials = n_tr_per_cnd * length(vel_coeffs_base) * length(phase_shift_base) * length(flash_order_base) * length(gr_width_base);
+ntrials = n_tr_per_cnd...
+    * length(vel_coeffs_base)...
+    * length(phase_shift_base)...
+    * length(flash_order_base)...
+    * length(gr_width_base)...
+    * length(cycle_mode_base)...
+    * length(firstleg_dir_base)...
+    * length(contrast_base);
 
 %Set up some stimulus characteristics-- remember the final display will be
 %halved resolution
@@ -117,6 +127,18 @@ flash_order_vec = flash_order_vec(ind_shuffle);
 % create grating width conditions
 gr_width_vec = repmat(repelem(gr_width_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base));
 gr_width_vec = gr_width_vec(ind_shuffle);
+
+% create cycle mode conditions
+cycle_mode_vec = repmat(repelem(cycle_mode_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)/length(cycle_mode_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base)*length(gr_width_base));
+cycle_mode_vec = cycle_mode_vec(ind_shuffle);
+
+% create first leg direction conditions
+firstleg_dir_vec = repmat(repelem(firstleg_dir_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)/length(cycle_mode_base)/length(firstleg_dir_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base)*length(gr_width_base)*length(cycle_mode_base));
+firstleg_dir_vec = firstleg_dir_vec(ind_shuffle);
+
+% create contrast conditions
+contrast_vec = repmat(repelem(contrast_base, ntrials/length(vel_coeffs_base)/length(phase_shift_base)/length(flash_order_base)/length(gr_width_base)/length(cycle_mode_base)/length(firstleg_dir_base)/length(contrast_base)), 1, length(phase_shift_base)*length(vel_coeffs_base)*length(flash_order_base)*length(gr_width_base)*length(cycle_mode_base)*length(firstleg_dir_base));
+contrast_vec = contrast_vec(ind_shuffle);
 
 % #########################################################################
 
